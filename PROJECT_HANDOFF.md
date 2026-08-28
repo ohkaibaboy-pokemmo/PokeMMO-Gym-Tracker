@@ -3,7 +3,7 @@
 **Last updated:** 2026-08-28  
 **Public branch:** `main`  
 **Target:** `v0.6.0`  
-**Status:** public source + CI green / SignPath integration pending  
+**Status:** public source + governance green / prerequisite release + SignPath pending  
 **Latest validated Windows package pipeline:** build 45 / run `33189191371` in the retained private development archive
 
 Read this before continuing release work.
@@ -140,19 +140,32 @@ Before import, the snapshot was checked for personal email addresses, local Wind
 
 Future GitHub commits use the account's GitHub `noreply` identity.
 
+## Repository governance
+
+Public-repository governance is now in place:
+
+- active repository ruleset **Protect main** targets the default branch;
+- branch deletion is restricted;
+- non-fast-forward / force-push updates are blocked;
+- private vulnerability reporting was enabled by the repository owner on 2026-08-28.
+
+The GitHub API confirms the active ruleset and its deletion/non-fast-forward rules. The private-vulnerability-reporting toggle is recorded from the owner's completed settings change because the current connector does not expose that account/repository security setting for verification.
+
 ## Signing / release status
 
 Selected direction: **SignPath Foundation**, assuming project acceptance. `CODE_SIGNING.md`, `SECURITY.md`, `CODEOWNERS`, pinned build dependencies and least-privilege workflows are present.
 
+SignPath Foundation's current OSS conditions require the project to already be released in the form that should be signed. The public repository therefore needs one normal unsigned Windows release before the application is submitted. Future SignPath Open Source signing must use a Trusted Build System with origin verification; the GitHub path is already the adopted architecture.
+
 Adopted next sequence:
 
-1. enable an appropriate `main` branch ruleset/protection policy and private vulnerability reporting;
-2. establish the prerequisite public release used for the SignPath Foundation application;
+1. publish the prerequisite public Windows release from the current clean `main` source;
+2. verify the tag workflow builds/tests and the GitHub release contains the expected Windows ZIP;
 3. apply to SignPath Foundation;
 4. after acceptance, add the actual SignPath project/policy identifiers and origin-verification signing integration — do not invent `.signpath` slugs before they are supplied;
 5. build and test the signed Windows candidate on normal current Windows;
 6. complete the final release-head regression/sign-off;
-7. publish the final v0.6 release.
+7. publish the final signed v0.6 release/update.
 
 ## Starting a new conversation
 
