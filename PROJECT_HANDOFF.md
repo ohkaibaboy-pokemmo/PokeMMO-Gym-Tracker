@@ -2,23 +2,24 @@
 
 **Last updated:** 2026-08-28  
 **Public branch:** `main`  
-**Target:** `v0.6.0`  
-**Status:** public source + governance green / prerequisite release + SignPath pending  
-**Latest validated Windows package pipeline:** build 45 / run `33189191371` in the retained private development archive
+**Released tag:** `v0.6.0`  
+**Status:** public unsigned v0.6 release published and validated / SignPath Foundation application next  
+**Public release workflow:** run `33213551249` — PASS  
+**Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
 
-Read this before continuing release work.
+Read this before continuing release/signing work.
 
 ## Source of truth
 
-This public GitHub repository is the source of truth for the Gym Tracker app's public source, architecture, build pipeline and release configuration. `V060_TEST_PLAN.md` is the formal v0.6 release gate.
+This public GitHub repository is the source of truth for the Gym Tracker app's public source, architecture, build pipeline and release configuration. `V060_TEST_PLAN.md` remains the detailed v0.6 validation record.
 
-The repository was created from the audited v0.6 source snapshot rather than publishing the old development Git history, because historical author/committer metadata in the private archive contained a personal email address. The public repository starts with a clean history and GitHub `noreply` commit identity. The private development archive is not to be made public.
+The public repository was created from an audited v0.6 source snapshot rather than publishing the old development Git history, because historical author/committer metadata in the private archive contained a personal email address. Public history uses the account's GitHub `noreply` identity. The private development archive must remain private.
 
 For the separate **6 Pillows / gym rerun strategy**, use the Google Sheet **PokeMMO 30-Gym Rerun Test Tracker**, especially **Project Handoff** and the latest test tab, as the current source of truth. Prefer real test evidence over older theoretical ideas.
 
 ## Project boundary
 
-The tracker is a lightweight standalone Windows companion for Gym Leader cooldowns, the five-other-trainer rule, routes, earnings and recent detected log activity.
+The tracker is a standalone Windows companion for Gym Leader cooldowns, the five-other-trainer rule, routes, earnings and recent detected log activity.
 
 Data path:
 
@@ -26,9 +27,7 @@ Data path:
 
 It does **not** inject into PokeMMO, read process memory, hook functions, inspect packets, capture the screen, use OCR, automate input, modify the game client or require runtime external APIs.
 
-Vanilla PokeMMO log output is the canonical parser contract. Third-party string-mod support is best-effort and has representative live validation.
-
-Do not commit raw user chat logs. Tests use sanitized fictional data.
+Vanilla PokeMMO log output is the canonical parser contract. Third-party string-mod support is best-effort and has representative live validation. Do not commit raw user chat logs; tests use sanitized fictional data.
 
 ## Current runtime architecture
 
@@ -41,35 +40,22 @@ Important modules include:
 - `tracker/async_replay.py` — responsive batched replay.
 - `tracker/state.py` — persistence/migrations in LocalAppData.
 - `tracker/earnings.py` / `earnings_ui.py` — actual/projected earnings.
-- `tracker/dashboard_full_refresh.py` — Full header/KPIs.
-- `tracker/dashboard_earnings_split.py` — Run Earnings KPI + Run Details support card.
-- `tracker/dashboard_gym_list.py` — single-Canvas Full Gym Route backed by the hidden Treeview model.
-- `tracker/dashboard_resize_smoothing.py` — safe Full resize floor plus whole-row route bottom edge.
+- `tracker/dashboard_full_refresh.py`, `dashboard_gym_list.py`, `dashboard_resize_smoothing.py` — Full dashboard.
 - `tracker/dashboard_detector.py` / `dashboard_detector_polish.py` — Detector presentation and replay lifecycle.
-- `tracker/user_assets.py` and override modules — portable art beside the EXE.
+- `tracker/user_assets.py` and override modules — portable local art.
 - `tracker/compact_ui.py`, `compact_type_icons.py`, `compact_row_snap.py` — Compact presentation.
-
-### Manual state mutation
 
 v0.6 intentionally exposes **no manual Gym-state mutation controls**. Replay is the recovery mechanism for missed ingestion. A narrow reconstruction safeguard remains for identifiable fractional-second synthetic leader events created during earlier private v0.6 testing; this is repair logic, not a user feature.
 
-## Adopted dashboard direction
+## Adopted UI / gameplay semantics
 
 Preserve the accepted Full hierarchy:
 
 **Header/KPIs -> Controls -> Gym Route -> Detector**
 
-Headline cards: **Ready | Waiting | Cooldown | Run Earnings**. Run Details contains Route base / Actual run / Route gyms / Other payouts. At narrow widths Run Details reflows to its own full-width row rather than clipping.
+Headline cards: **Ready | Waiting | Cooldown | Run Earnings**. Run Details contains Route base / Actual run / Route gyms / Other payouts. Compact remains a rerun overlay rather than a miniature Full dashboard.
 
-Full route rows remain:
-
-**Portrait -> # -> Type + Leader -> Gym -> Region -> 5-rule -> Cooldown -> Last Defeated -> Status -> Payout**
-
-Compact remains a rerun overlay rather than a miniature Full dashboard. Preserve its stable in-place sync, frameless/draggable/always-on-top behaviour and complete-row snapping.
-
-## Five-rule / cooldown semantics
-
-Adopted counting model is opt-out:
+Five-rule counting model is opt-out:
 
 - every detected normal trainer victory counts toward all currently active Gym requirements by default;
 - only explicitly excluded trainers fail to count;
@@ -85,13 +71,7 @@ Earlier private testing produced a false Bugsy `5/5 READY` because manual UI tes
 
 Live reconciliation repaired Bugsy to `4/5 WAITING`; the genuine four qualifying events were **PI Carlos, Socialite Marian, Leader Gardenia and Leader Lt. Surge**. Gentleman Yan moved Bugsy to `5/5`, after which PokeMMO allowed the rematch. Conclusion: repaired tracker state matched the server and **PI Carlos counted**. Do not reopen a Carlos exclusion theory without new empirical evidence.
 
-## Live tail / replay
-
-Stable unterminated EOF records are processed after two unchanged polls without committing the file position; growing partial records remain deferred. Replay is asynchronous and same-file replay replaces its prior Detector replay session while persistent victory/payout state remains de-duplicated.
-
-Representative live string-mod validation passed for normal trainers, Gym wins/cooldowns, payouts and the five-battle block warning.
-
-## Earnings semantics
+## Earnings / route semantics
 
 - `Reset Run` advances the accounting window without deleting payout history.
 - gold row payout means empirical payout in the current run window.
@@ -119,53 +99,51 @@ LocalAppData remains for state/settings only. Missing or invalid overrides fall 
 
 ## CI / packaging
 
-The clean public repository keeps the hardened release workflow on GitHub-hosted runners:
+The public repository keeps the hardened release workflow on GitHub-hosted runners:
 
 - default `contents: read`;
 - release publishing isolated to the tag-only job with `contents: write`;
 - GitHub Actions pinned to immutable commit SHAs;
 - checkout credentials not persisted;
 - build dependencies pinned in `requirements-build.txt`;
-- Windows artifact uploaded before release publication, matching the path needed for later SignPath origin verification.
+- Windows artifact uploaded before release publication, matching the intended SignPath origin-verification path.
 
-Private build 45 / run `33189191371` passed the same hardened source/tooling path: regression tests, pinned build-tool installation, Windows onefile build, icon verification, ZIP packaging and artifact upload. No app-runtime code changed as part of the public-history cleanup.
+The prerequisite public release is now complete:
 
-The clean public `main` source has also passed its GitHub-hosted regression workflow after import. The ordinary `main` push correctly runs the Linux regression job while skipping Windows packaging/release publication.
+- GitHub release **PokeMMO Gym Tracker v0.6.0** is public, not draft and not prerelease;
+- tag `v0.6.0` points to public source commit `79a29fb1e9a068a5f8c9deb561a3fcd44bc58279`;
+- release workflow run `33213551249` passed Regression tests, Windows artifact build and Publish GitHub Release;
+- the Windows job passed checkout, pinned build-tool installation, icon generation, onefile PyInstaller build, embedded-icon verification, ZIP packaging and artifact upload;
+- release asset `PokeMMO-Gym-Tracker-windows-x64.zip` is approximately 11.4 MB with SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`.
 
-## Public-repository privacy result
+This v0.6 release is intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
 
-The old private repository's historical commit metadata contained a personal email. Rather than expose or rely on a complex history rewrite, the public repository was created from an audited tracked-source snapshot.
+## Public-repository privacy / governance
 
-Before import, the snapshot was checked for personal email addresses, local Windows user paths, private keys, common GitHub/AWS credential patterns, generic secret assignments and tracked log/state/build artifacts; none were found. Legacy versioned source files and the abandoned Go experiment were omitted from the public tree.
+The old private repository's historical commit metadata contained a personal email. Rather than expose or rely on a complex history rewrite, the public repository was created from an audited tracked-source snapshot. The snapshot was checked for personal email addresses, local Windows user paths, private keys, common GitHub/AWS credential patterns, generic secret assignments and tracked log/state/build artifacts; none were found.
 
-Future GitHub commits use the account's GitHub `noreply` identity.
+Repository governance is in place:
 
-## Repository governance
-
-Public-repository governance is now in place:
-
-- active repository ruleset **Protect main** targets the default branch;
+- active ruleset **Protect main** targets the default branch;
 - branch deletion is restricted;
 - non-fast-forward / force-push updates are blocked;
 - private vulnerability reporting was enabled by the repository owner on 2026-08-28.
 
-The GitHub API confirms the active ruleset and its deletion/non-fast-forward rules. The private-vulnerability-reporting toggle is recorded from the owner's completed settings change because the current connector does not expose that account/repository security setting for verification.
-
-## Signing / release status
+## Signing status / next sequence
 
 Selected direction: **SignPath Foundation**, assuming project acceptance. `CODE_SIGNING.md`, `SECURITY.md`, `CODEOWNERS`, pinned build dependencies and least-privilege workflows are present.
 
-SignPath Foundation's current OSS conditions require the project to already be released in the form that should be signed. The public repository therefore needs one normal unsigned Windows release before the application is submitted. Future SignPath Open Source signing must use a Trusted Build System with origin verification; the GitHub path is already the adopted architecture.
+The prerequisite public release required by the project's adopted application flow is complete. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
 
-Adopted next sequence:
+Next sequence:
 
-1. publish the prerequisite public Windows release from the current clean `main` source;
-2. verify the tag workflow builds/tests and the GitHub release contains the expected Windows ZIP;
-3. apply to SignPath Foundation;
-4. after acceptance, add the actual SignPath project/policy identifiers and origin-verification signing integration — do not invent `.signpath` slugs before they are supplied;
-5. build and test the signed Windows candidate on normal current Windows;
-6. complete the final release-head regression/sign-off;
-7. publish the final signed v0.6 release/update.
+1. submit the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing public release `v0.6.0`;
+2. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
+3. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
+4. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
+5. build a signed Windows candidate through GitHub-hosted Actions;
+6. validate download -> extract -> launch and confirm Windows shows the expected publisher/signature;
+7. run final post-signing regression/sign-off and update the public release.
 
 ## Starting a new conversation
 
