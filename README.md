@@ -17,15 +17,17 @@ An unofficial lightweight Windows companion for tracking PokeMMO Gym Leader rema
 - Supports explicit UI scaling from 0.85× through 2.0× without changing Tk's global DPI setting.
 - Supports portable local type-icon and leader-sprite overrides beside the executable.
 
-## Current milestone — v0.6 release candidate
+## Current milestone — v0.6 public release
 
-This repository is the clean public source repository for the v0.6 release candidate. Its public history begins from an audited source snapshot; the earlier private development repository is retained separately and is not part of this repository's history.
+The first public Windows release, **v0.6.0**, is available from GitHub Releases. It is intentionally unsigned while the project applies for SignPath Foundation open-source code signing.
+
+This repository is the clean public source repository for v0.6. Its public history begins from an audited source snapshot; the earlier private development repository is retained separately and is not part of this repository's history.
 
 v0.6 redesigns the Full dashboard, improves Compact presentation, adds responsive replay/live-tail handling, separates current-run earnings from route projections, supports portable art overrides, and removes user-facing manual Gym-state mutation.
 
 The tracker is intentionally **log-derived**. Earlier v0.6 manual correction controls were removed after synthetic test events were shown to pollute real five-rule state. Replay is the recovery mechanism for missed live ingestion.
 
-The formal v0.6 release gate is documented in `V060_TEST_PLAN.md`. Runtime/UI validation and the hardened Windows build pipeline have passed; public code signing is the remaining distribution gate before the final v0.6 release.
+The formal v0.6 validation record is documented in `V060_TEST_PLAN.md`. Runtime/UI validation, the hardened Windows build pipeline, and the public v0.6.0 release workflow have passed. SignPath integration and signed-package validation are the remaining distribution work.
 
 ## Dashboard
 
@@ -147,7 +149,7 @@ See [SECURITY.md](SECURITY.md) for security-reporting guidance.
 
 ## Status
 
-v0.6 is a release candidate. The source is public, but the normal Windows release remains pending SignPath Foundation code-signing integration and final signed-package validation.
+v0.6.0 is publicly released as an **unsigned** Windows build. The release workflow and package build are green. The project is now applying for SignPath Foundation code signing; after acceptance, a signed candidate will be built and validated before the release is updated with the signed artifact.
 
 The project is unofficial and should not be described as PokeMMO-approved unless PokeMMO staff explicitly approves the software.
 
