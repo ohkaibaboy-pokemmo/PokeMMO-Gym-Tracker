@@ -1,0 +1,10 @@
+# Windows release build toolchain.
+# Versions were revalidated by successful v0.6 build 45 (2026-08-28).
+pyinstaller==6.22.2
+pillow==12.3.0
+pefile==2024.8.26
+altgraph==0.17.5
+pyinstaller-hooks-contrib==2026.7
+pywin32-ctypes==0.2.3
+setuptools==84.0.0
+packaging==26.3

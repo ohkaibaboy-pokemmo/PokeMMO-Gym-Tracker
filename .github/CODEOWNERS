@@ -1,0 +1,9 @@
+# Default repository owner
+* @ohkaibaboy-pokemmo
+
+# Release, signing and supply-chain sensitive files
+/.github/workflows/ @ohkaibaboy-pokemmo
+/.signpath/ @ohkaibaboy-pokemmo
+/CODE_SIGNING.md @ohkaibaboy-pokemmo
+/SECURITY.md @ohkaibaboy-pokemmo
+/requirements-build.txt @ohkaibaboy-pokemmo

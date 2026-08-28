@@ -1,0 +1,130 @@
+name: Build Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: build-windows-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Validate clean source
+        shell: bash
+        run: |
+          python -m py_compile app/main.pyw
+          python -m compileall -q app/tracker
+          if [ -f scripts/make_windows_icon.py ]; then python -m py_compile scripts/make_windows_icon.py; fi
+          if [ -f scripts/verify_embedded_icon.py ]; then python -m py_compile scripts/verify_embedded_icon.py; fi
+
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+
+  windows-build:
+    name: Windows artifact
+    needs: test
+    # PR commits and normal branch pushes only run the Linux regression job.
+    # Windows packaging is deliberate: manual dispatch or a release tag.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned build tools
+        run: python -m pip install --disable-pip-version-check -r requirements-build.txt
+
+      - name: Generate Windows icon when supported
+        shell: pwsh
+        run: |
+          if (Test-Path "scripts/make_windows_icon.py") {
+            python scripts/make_windows_icon.py
+          }
+
+      - name: Build Windows app
+        shell: pwsh
+        run: |
+          if (Test-Path ".build-assets/gym-tracker.ico") {
+            pyinstaller --noconfirm --clean --onefile --windowed --paths app --icon ".build-assets/gym-tracker.ico" --name "PokeMMO Gym Tracker" app/main.pyw
+          } else {
+            pyinstaller --noconfirm --clean --onefile --windowed --paths app --name "PokeMMO Gym Tracker" app/main.pyw
+          }
+
+      - name: Verify embedded Windows icon when supported
+        shell: pwsh
+        run: |
+          if (Test-Path "scripts/verify_embedded_icon.py") {
+            python scripts/verify_embedded_icon.py
+          }
+
+      - name: Package Windows build
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist/custom/type_icons" | Out-Null
+          New-Item -ItemType Directory -Force -Path "dist/custom/leader_sprites" | Out-Null
+          Copy-Item README.md dist/README.md
+          Copy-Item LICENSE dist/LICENSE
+          Compress-Archive -Path "dist/PokeMMO Gym Tracker.exe", "dist/README.md", "dist/LICENSE", "dist/custom" -DestinationPath "PokeMMO-Gym-Tracker-windows-x64.zip"
+
+      - name: Upload Windows artifact
+        id: upload
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: PokeMMO-Gym-Tracker-windows-x64
+          path: PokeMMO-Gym-Tracker-windows-x64.zip
+          retention-days: 7
+
+  release:
+    name: Publish GitHub Release
+    needs: windows-build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: PokeMMO-Gym-Tracker-windows-x64
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: PokeMMO-Gym-Tracker-windows-x64.zip
+          generate_release_notes: true
