@@ -9,7 +9,9 @@ from .state import save_state
 from .trainers import normal_trainer_counts
 
 COLOR_TAG_RE = re.compile(r"\[#(?:[0-9A-Fa-f]{6})?\]")
-LINE_RE = re.compile(r"^\[(\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2})\]\s+\[([^\]]+)\]\s?(.*)$")
+# Timestamp formatting is locale-dependent in PokeMMO logs. Capture the complete
+# leading timestamp field here and let core.parse_ts validate the supported forms.
+LINE_RE = re.compile(r"^\[([^\]]+)\]\s+\[([^\]]+)\]\s?(.*)$")
 CHALLENGE_RE = re.compile(r"^You are challenged by (.+)!$")
 SEND_OUT_RE = re.compile(r"^(.+?) sent out (.+)!$")
 VICTORY_RE = re.compile(r"^Player defeated (.+)!$")
