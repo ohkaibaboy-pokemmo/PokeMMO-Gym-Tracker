@@ -44,6 +44,24 @@ class ParserRegressionTests(unittest.TestCase):
         self.assertEqual(char["earnings"]["events"][0]["leader"], "Brock")
         self.assertEqual(char["earnings"]["events"][0]["amount"], 8632)
 
+    def test_us_windows_gym_win_with_12_hour_timestamp(self):
+        # Sanitised regression based on external Windows evidence from 2026-08-29:
+        # PokeMMO emitted M/D/YY timestamps with AM/PM rather than the previously
+        # validated DD/MM/YYYY 24-hour format.
+        self.feed(
+            "[8/29/26 4:04:30 PM] [Battle] You are challenged by [#ff8a00]Leader[#] [#ff8a00]Flannery[#]!",
+            "[8/29/26 4:04:37 PM] [Battle] [#ff8a00]ExternalTester[#] sent out [#ff8a00]Archeops[#] and [#ff8a00]Blastoise[#]!",
+            "[8/29/26 4:05:52 PM] [Battle] Player defeated [#ff8a00]Leader[#] [#ff8a00]Flannery[#]!",
+            "[8/29/26 4:05:54 PM] [Battle] [#ff8a00]ExternalTester[#] got $[#ff8a00]14086[#] for winning!",
+        )
+        char = self.state["characters"]["ExternalTester"]
+        record = char["gyms"]["Flannery"]
+        self.assertEqual(record["defeated_at"], "2026-08-29T16:05:52")
+        self.assertEqual(record["ready_at"], "2026-08-30T10:05:52")
+        self.assertEqual(record["payout"], 14086)
+        self.assertEqual(char["earnings"]["events"][0]["amount"], 14086)
+        self.assertTrue(any("GYM WIN: Hoenn / Lavaridge" in text for _ts, text, _level in self.events))
+
     def test_normal_trainer_counts_after_gym_by_default(self):
         self.feed(
             "[23/08/2026 15:06:31] [Battle] You are challenged by Leader Brock!",
