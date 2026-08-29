@@ -27,6 +27,7 @@ from tracker.dashboard_table_alignment import install_dashboard_table_alignment
 from tracker.dashboard_ui import install_dashboard
 from tracker.earnings_ui import install_earnings
 from tracker.leader_art_integration import install_leader_art
+from tracker.layout_visibility_guard import install_layout_visibility_guard
 from tracker.money_style import install_game_money_style
 from tracker.presentation import install_presentation
 from tracker.type_icon_overrides import install_type_icon_overrides
@@ -100,6 +101,10 @@ if __name__ == "__main__":
     app.engine.on_event = app.add_event
 
     install_dashboard_scaling(app)
+    # Scaling captures baseline geometry before the final presentation layers hide
+    # retired widgets. Never let later scale passes remap those forgotten widgets;
+    # this prevents duplicate live status and the legacy earnings card resurfacing.
+    install_layout_visibility_guard(app)
     # Final release-pass chrome changes depend on the scaling controller being
     # present: restore focus after scale changes, keep combobox arrows visible,
     # clarify current-run payout gold, add region accents and tighten action groups.
