@@ -3,8 +3,9 @@
 **Last updated:** 2026-08-29  
 **Public branch:** `main`  
 **Released tag:** `v0.6.0`  
-**Status:** public unsigned v0.6 release published / external-test portability hotfix merged / fresh Windows candidate pending validation / SignPath Foundation application follows hotfix validation  
+**Status:** public unsigned v0.6 release published / external-test portability hotfix validated on an external 1920×1080 Windows setup / SignPath Foundation application next  
 **Latest hotfix regression:** run `33258276374` — PASS  
+**Latest Windows candidate:** run `33258556273` — PASS / externally live-validated  
 **Public release workflow:** run `33213551249` — PASS  
 **Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
 
@@ -67,19 +68,17 @@ Five-rule counting model is opt-out:
 
 Cooldown is 18 hours per character. Active timer = COOLDOWN; expired timer + incomplete rule = WAITING; expired timer + `5/5` = READY. PokeMMO's rematch rejection is authoritative evidence and emits a WARN Detector event.
 
-### External tester portability regression — 2026-08-29
+### External tester portability regression — resolved 2026-08-29
 
 A first external-user test exposed two post-release portability issues that were not visible on the primary development machine.
 
-**Tracking failure:** the app successfully selected and watched the tester's PokeMMO chat log, but every battle line was ignored. Their vanilla Windows log used the US timestamp form `M/D/YY h:mm:ss AM/PM` (for example the observed Flannery rerun), while the parser contract only accepted the previously validated UK-style `DD/MM/YYYY HH:MM:SS`. The hotfix keeps the accepted UK grammar and adds the empirically observed US 12-hour forms. Regression coverage uses a sanitized fictional reproduction of the external Flannery challenge -> player send-out -> victory -> payout sequence; the raw user log is not committed.
+**Tracking failure:** the app successfully selected and watched the tester's PokeMMO chat log, but every battle line was ignored. Their vanilla Windows log used the US timestamp form `M/D/YY h:mm:ss AM/PM`, while the parser contract only accepted the previously validated UK-style `DD/MM/YYYY HH:MM:SS`. The hotfix keeps the accepted UK grammar and adds the empirically observed US 12-hour forms. Regression coverage uses a sanitized fictional reproduction of the external Flannery challenge -> player send-out -> victory -> payout sequence; the raw user log is not committed.
 
-**Full-header corruption:** the same screenshot showed the passive live-log status twice and the retired mixed-purpose earnings card resurfacing beneath the headline KPIs. Root cause: the scaling controller captured baseline pack/grid padding before later presentation layers deliberately called `pack_forget()` / `grid_forget()`. A subsequent scaling pass could call `pack_configure()` / `grid_configure()` on those now-unmanaged widgets, which remapped them and also distorted the KPI column layout. `layout_visibility_guard.py` now withholds unmanaged/mismatched widgets from a scaling pass without deleting their baseline metadata, so a widget can still scale normally if it is deliberately managed again later.
+**Full-header corruption:** the original tester screenshot showed the passive live-log status twice and the retired mixed-purpose earnings card resurfacing beneath the headline KPIs. Root cause: the scaling controller captured baseline pack/grid padding before later presentation layers deliberately called `pack_forget()` / `grid_forget()`. A subsequent scaling pass could call `pack_configure()` / `grid_configure()` on those now-unmanaged widgets, which remapped them and distorted the KPI layout. `layout_visibility_guard.py` now withholds unmanaged/mismatched widgets from a scaling pass without deleting their baseline metadata, so a widget can still scale normally if it is deliberately managed again later.
 
-The tester reported a 1920x1080 display; the supplied screenshot itself showed a non-fullscreen app window, so do not treat this as a simple monitor-width breakpoint failure. Validate the hidden-widget fix before changing the approved responsive-header breakpoint.
+The hotfix was merged to `main` at commit `6a5f9e73a7c5801a8968ce1652b9f4a9acdecd96`; public regression workflow run `33258276374` passed. The chat-retrievable Windows-artifact workflow was then enabled on `main`, and candidate run `33258556273` passed regression, Windows build, icon verification, packaging and artifact upload.
 
-The hotfix is merged to `main` at commit `6a5f9e73a7c5801a8968ce1652b9f4a9acdecd96`. Public regression workflow run `33258276374` passed. The merge occurred before normal `main` pushes were configured to produce Windows artifacts, so a fresh Windows candidate still needs to be built and externally validated.
-
-Hotfix validation sequence: fresh Windows candidate -> external retest of live US-format tracking and Full header -> update this handoff/test plan with final evidence.
+**External validation PASS:** the same external tester, on a reported 1920×1080 Windows setup, ran the fresh fixed candidate at UI Scale `1.0×`. Live US-format tracking was visibly working across consecutive Gym battles: Brycen was detected, defeated and paid `$14,577`; Iris was then detected, defeated and paid `$14,742`; the dashboard showed two active cooldowns and Brycen correctly advanced to `1/5` while Iris began at `0/5`. The header no longer duplicated the live-log status, the retired earnings card did not reappear, and Run Details remained readable at the default scale. This closes the portability hotfix; do not change the responsive-header breakpoint based on the original corrupted screenshot unless new evidence appears.
 
 ### Bugsy / PI Carlos regression — resolved
 
@@ -153,22 +152,17 @@ Repository governance is in place:
 
 Selected direction: **SignPath Foundation**, assuming project acceptance. `CODE_SIGNING.md`, `SECURITY.md`, `CODEOWNERS`, pinned build dependencies and least-privilege workflows are present.
 
-The prerequisite public release required by the project's adopted application flow is complete. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
-
-Before continuing the SignPath sequence, finish validation of the 2026-08-29 external-test portability hotfix so the public source presented for signing is not knowingly carrying the parser/header regressions.
+The prerequisite public release required by the project's adopted application flow is complete, and the 2026-08-29 external-test portability hotfix is now externally validated. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
 
 Next sequence:
 
-1. build and retrieve a fresh Windows candidate from current `main`;
-2. externally validate US-format live tracking plus the duplicate-Live / retired-earnings-card header fixes;
-3. record final hotfix validation in the handoff/test plan;
-4. submit the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
-5. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
-6. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
-7. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
-8. build a signed Windows candidate through GitHub-hosted Actions;
-9. validate download -> extract -> launch and confirm Windows shows the expected publisher/signature;
-10. run final post-signing regression/sign-off and update the public release.
+1. submit the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
+2. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
+3. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
+4. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
+5. build a signed Windows candidate through GitHub-hosted Actions;
+6. validate download -> extract -> launch and confirm Windows shows the expected publisher/signature;
+7. run final post-signing regression/sign-off and update the public release.
 
 ## Starting a new conversation
 
