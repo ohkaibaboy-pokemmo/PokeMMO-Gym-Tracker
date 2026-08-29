@@ -4,6 +4,13 @@ from datetime import datetime
 from .constants import GYMS, LEADER_ALIASES
 
 
+TIMESTAMP_FORMATS = (
+    "%d/%m/%Y %H:%M:%S",
+    "%m/%d/%y %I:%M:%S %p",
+    "%m/%d/%Y %I:%M:%S %p",
+)
+
+
 def norm(value: str) -> str:
     return re.sub(r"[^a-z0-9&]+", "", value.lower())
 
@@ -36,7 +43,21 @@ def opponent_is_leader(opponent: str):
 
 
 def parse_ts(value: str) -> datetime:
-    return datetime.strptime(value, "%d/%m/%Y %H:%M:%S")
+    """Parse timestamp formats emitted by PokeMMO on supported Windows locales.
+
+    Existing UK/live validation uses day-first 24-hour timestamps with a four-digit
+    year. External US Windows validation exposed month-first 12-hour timestamps
+    with AM/PM and a two-digit year. Keep the accepted UK grammar while accepting
+    the observed US variants as the same canonical datetime input.
+    """
+    value = str(value).strip()
+    last_error = None
+    for fmt in TIMESTAMP_FORMATS:
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError as exc:
+            last_error = exc
+    raise last_error or ValueError(f"Unsupported timestamp: {value}")
 
 
 def gym_label(region: str, gym: str, leader: str) -> str:
