@@ -3,7 +3,8 @@
 **Last updated:** 2026-08-29  
 **Public branch:** `main`  
 **Released tag:** `v0.6.0`  
-**Status:** public unsigned v0.6 release published / external-test portability hotfix in validation / SignPath Foundation application follows hotfix validation  
+**Status:** public unsigned v0.6 release published / external-test portability hotfix merged / fresh Windows candidate pending validation / SignPath Foundation application follows hotfix validation  
+**Latest hotfix regression:** run `33258276374` — PASS  
 **Public release workflow:** run `33213551249` — PASS  
 **Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
 
@@ -76,7 +77,9 @@ A first external-user test exposed two post-release portability issues that were
 
 The tester reported a 1920x1080 display; the supplied screenshot itself showed a non-fullscreen app window, so do not treat this as a simple monitor-width breakpoint failure. Validate the hidden-widget fix before changing the approved responsive-header breakpoint.
 
-Hotfix validation sequence: regression CI -> Windows candidate -> external retest of live US-format tracking and Full header -> update this handoff/test plan with final evidence.
+The hotfix is merged to `main` at commit `6a5f9e73a7c5801a8968ce1652b9f4a9acdecd96`. Public regression workflow run `33258276374` passed. The merge occurred before normal `main` pushes were configured to produce Windows artifacts, so a fresh Windows candidate still needs to be built and externally validated.
+
+Hotfix validation sequence: fresh Windows candidate -> external retest of live US-format tracking and Full header -> update this handoff/test plan with final evidence.
 
 ### Bugsy / PI Carlos regression — resolved
 
@@ -115,11 +118,15 @@ LocalAppData remains for state/settings only. Missing or invalid overrides fall 
 The public repository keeps the hardened release workflow on GitHub-hosted runners:
 
 - default `contents: read`;
-- release publishing isolated to the tag-only job with `contents: write`;
+- pull requests run regression tests only;
+- successful pushes to `main`, manual workflow dispatches and release tags produce a temporary Windows artifact;
+- this means connected GitHub tooling can retrieve the latest validated Windows candidate directly from chat after a `main` change, without the user manually opening GitHub Actions;
+- release publishing remains isolated to the tag-only job with `contents: write`;
 - GitHub Actions pinned to immutable commit SHAs;
 - checkout credentials not persisted;
 - build dependencies pinned in `requirements-build.txt`;
-- Windows artifact uploaded before release publication, matching the intended SignPath origin-verification path.
+- Windows artifact uploaded before release publication, matching the intended SignPath origin-verification path;
+- normal `main` artifacts are retained for 7 days and do not create or replace a public GitHub Release.
 
 The prerequisite public release is now complete:
 
@@ -152,14 +159,16 @@ Before continuing the SignPath sequence, finish validation of the 2026-08-29 ext
 
 Next sequence:
 
-1. finish regression + external Windows validation of the 2026-08-29 portability hotfix and merge the validated fix to `main`;
-2. submit the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
-3. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
-4. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
-5. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
-6. build a signed Windows candidate through GitHub-hosted Actions;
-7. validate download -> extract -> launch and confirm Windows shows the expected publisher/signature;
-8. run final post-signing regression/sign-off and update the public release.
+1. build and retrieve a fresh Windows candidate from current `main`;
+2. externally validate US-format live tracking plus the duplicate-Live / retired-earnings-card header fixes;
+3. record final hotfix validation in the handoff/test plan;
+4. submit the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
+5. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
+6. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
+7. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
+8. build a signed Windows candidate through GitHub-hosted Actions;
+9. validate download -> extract -> launch and confirm Windows shows the expected publisher/signature;
+10. run final post-signing regression/sign-off and update the public release.
 
 ## Starting a new conversation
 
