@@ -6,7 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "app"))
 
-from tracker.dashboard_next_ready import next_ready_summary_column_weights
+from tracker.dashboard_next_ready import (
+    next_ready_header_card_order,
+    next_ready_summary_column_weights,
+)
 from tracker.next_ready import (
     ALL_CHARACTERS,
     format_next_ready_detail,
@@ -114,10 +117,18 @@ class NextReadyTests(unittest.TestCase):
         self.assertTrue(result["ready_now"])
         self.assertEqual(format_next_ready_time(result), "READY NOW")
 
-    def test_header_adds_fifth_equal_headline_before_run_details(self):
+    def test_header_priority_order_drops_redundant_cooldown_card(self):
+        self.assertEqual(
+            next_ready_header_card_order(),
+            ("next_ready", "ready", "waiting", "earnings", "details"),
+        )
+        self.assertNotIn("cooldown", next_ready_header_card_order())
+
+    def test_header_uses_four_equal_headlines_before_run_details(self):
         weights = next_ready_summary_column_weights()
-        self.assertEqual(weights[:5], (1, 1, 1, 1, 1))
-        self.assertGreater(weights[5], weights[4])
+        self.assertEqual(weights[:4], (1, 1, 1, 1))
+        self.assertEqual(len(weights), 5)
+        self.assertGreater(weights[4], weights[3])
 
 
 if __name__ == "__main__":
