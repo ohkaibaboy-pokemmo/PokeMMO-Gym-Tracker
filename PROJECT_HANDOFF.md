@@ -80,6 +80,21 @@ The hotfix was merged to `main` at commit `6a5f9e73a7c5801a8968ce1652b9f4a9acdec
 
 **External validation PASS:** the same external tester, on a reported 1920×1080 Windows setup, ran the fresh fixed candidate at UI Scale `1.0×`. Live US-format tracking was visibly working across consecutive Gym battles: Brycen was detected, defeated and paid `$14,577`; Iris was then detected, defeated and paid `$14,742`; the dashboard showed two active cooldowns and Brycen correctly advanced to `1/5` while Iris began at `0/5`. The header no longer duplicated the live-log status, the retired earnings card did not reappear, and Run Details remained readable at the default scale. This closes the portability hotfix; do not change the responsive-header breakpoint based on the original corrupted screenshot unless new evidence appears.
 
+### External tester Pastoria / Wake alias regression — resolved 2026-08-30
+
+A second external test exposed a leader-name mismatch at Pastoria. The vanilla US-format log emitted `Leader Wake` for both the challenge and victory, and the Detector visibly reported a Gym win and `$13,572` payout, but the route table still showed **Pastoria — Crasher Wake** as UNKNOWN.
+
+Root cause: the canonical Gym table and built-in routes use `Crasher Wake`, while the observed PokeMMO log uses the shorter `Wake`. `LEADER_ALIASES` recognized `crasherwake` but did not recognize `wake`, so the engine stored the cooldown under a separate `Wake` state key. The same raw opponent phrase also leaked into the Detector payout label.
+
+Adopted repair:
+
+- map `Wake` -> `Crasher Wake` during leader canonicalization;
+- canonicalize historical Gym keys, Gym earnings labels and custom-route entries during state migration so already-affected users repair automatically on their next launch;
+- canonicalize Gym payout presentation through `opponent_is_leader()` so the Detector displays the canonical leader name;
+- keep regression coverage based on a sanitized reproduction of the observed `15:45:06` challenge -> `15:47:06` victory -> `15:47:07` `$13,572` payout sequence; do not commit the tester's raw chat log.
+
+Regression workflow run `33315930141` passed all tests after the repair. Treat `Wake` as an empirically verified vanilla PokeMMO alias for `Crasher Wake` going forward.
+
 ### Bugsy / PI Carlos regression — resolved
 
 Earlier private testing produced a false Bugsy `5/5 READY` because manual UI testing had inserted synthetic fractional-second Gym Leader events into saved five-rule history. v0.6 removed user-facing mutation and ignores those identifiable legacy synthetic events during reconstruction.
