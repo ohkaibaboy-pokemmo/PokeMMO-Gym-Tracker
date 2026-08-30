@@ -4,7 +4,7 @@
 **Public branch:** `main`  
 **Released tag:** `v0.6.0`  
 **Status:** public unsigned v0.6 release published / external-test portability hotfix validated / Microsoft Defender false positive confirmed for the submitted official candidate and detection removed / SignPath Foundation application still planned  
-**Latest main candidate:** run `33333768325` — PASS / prioritized Next Ready header Windows build / external UI-runtime validation pending  
+**Latest main candidate:** run `33334221774` — PASS / corrected six-card Next Ready-first Windows build / external UI-runtime validation pending  
 **Latest externally validated candidate:** run `33258556273` — PASS / external live validation / submitted EXE later cleared by Microsoft  
 **Public release workflow:** run `33213551249` — PASS  
 **Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
@@ -42,7 +42,7 @@ Important modules include:
 - `tracker/async_replay.py` — responsive batched replay.
 - `tracker/state.py` — persistence/migrations in LocalAppData.
 - `tracker/earnings.py` / `earnings_ui.py` — actual/projected earnings.
-- `tracker/next_ready.py` / `dashboard_next_ready.py` — operational next-rerunnable calculation and Full-header presentation.
+- `tracker/next_ready.py` / `dashboard_next_ready.py` — earliest active cooldown-end calculation and Full-header presentation.
 - `tracker/dashboard_full_refresh.py`, `dashboard_gym_list.py`, `dashboard_resize_smoothing.py` — Full dashboard.
 - `tracker/dashboard_detector.py` / `dashboard_detector_polish.py` — Detector presentation and replay lifecycle.
 - `tracker/layout_visibility_guard.py` — prevents scale passes from remapping presentation widgets that were deliberately hidden with `pack_forget` / `grid_forget`.
@@ -71,16 +71,18 @@ Cooldown is 18 hours per character. Active timer = COOLDOWN; expired timer + inc
 
 ### Next Ready card — adopted 2026-08-30
 
-`NEXT READY` answers which Gym is next to become actually rerunnable, not merely which cooldown expires first.
+`NEXT READY` is a cooldown-timing card. It answers **when the next currently active Gym cooldown will end**.
 
-- only Gym records already at `5/5` are eligible for a future ready prediction;
-- among eligible future records, show the earliest `ready_at` as local date/time plus leader;
-- if an eligible Gym's cooldown has already expired, show `READY NOW` rather than an old timestamp;
-- an expired cooldown with an incomplete 5-rule remains unpredictable and must not be presented as ready at its cooldown-end time;
+- while any Gym is on cooldown in the selected scope, choose the earliest future `ready_at` timestamp regardless of five-rule progress;
+- show that cooldown-end point as local **date + time**, with the leader beneath it;
+- in `All characters` view, search globally and include the character alongside the leader;
 - when a specific character is selected, calculate only for that character;
-- `All characters` searches globally and identifies the character alongside the leader;
-- route, region and display filters do not alter this card, because it is a global operational readiness metric;
-- legacy `manual_ready` state is honored only for compatibility so the card cannot contradict an already-ready historical row.
+- route, region and display filters do not alter this card;
+- only show **READY** when there are **no active cooldowns** in the selected scope, with `No active cooldowns` as the supporting line;
+- `READY` on this card therefore means **no active cooldown timer remains**. It does **not** mean every expired Gym has completed the five-rule; the separate READY and WAITING cards/route rows remain authoritative for actual rerun eligibility;
+- legacy `manual_ready` records are not treated as active cooldowns, preserving their existing compatibility semantics.
+
+The earlier implementation tried to predict actual rerunnability by requiring `5/5` before showing a future timestamp. Live review superseded that behavior: the user wants the card to expose the next cooldown end directly, even if that Gym will still be WAITING afterward because its five-rule is incomplete.
 
 Live review of the first Next Ready Windows build confirmed that the new card itself was useful and readable. The adopted information hierarchy is **Next Ready | Ready | Waiting | Cooldown | Run Earnings | Run Details**: the existing header remains intact, with Next Ready moved to the front. A brief five-card build that removed **Cooldown** was based on a misunderstanding and is superseded; do not treat removal of the Cooldown headline as an adopted design decision.
 
@@ -171,10 +173,10 @@ The prerequisite public release is complete:
 
 Latest development candidate:
 
-- `main` commit `25c9dfc8b644121488fc4b689a0421afc7aa85bd` adopted a brief five-card headline build that removed the Cooldown count; the user immediately clarified that Cooldown should remain and that this build is superseded by the corrected six-card order with Next Ready first;
-- workflow run `33333768325` passed Regression tests and the Windows artifact job, including icon generation/verification and packaging;
-- artifact digest: `sha256:f0a1feb93ff74813d0347093440261b2c454ccfc177176ed5f6fae49cf852e16`;
-- this superseded candidate is not the target for further external UI validation; validate the corrected six-card candidate once built on `main`.
+- `main` commit `a305885a1f8bf0a598fb11c0a7678ac2e61e8f83` restored the intended six-card headline order **Next Ready | Ready | Waiting | Cooldown | Run Earnings | Run Details** after the brief no-Cooldown misunderstanding;
+- workflow run `33334221774` passed Regression tests and the Windows artifact job, including icon generation/verification and packaging;
+- artifact digest: `sha256:27388a35e58057dcbc3c037cdbec26470bc2afbabf7f7990ac882f1bf0868b63`;
+- live review then refined the **semantics** of Next Ready: it should show the earliest active cooldown end regardless of five-rule progress and show READY only when no cooldown remains. The next candidate must validate that behavior while keeping the six-card layout unchanged.
 
 This v0.6 release and current development candidates are intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
 
@@ -203,7 +205,7 @@ Operational consequence:
 - keep Defender enabled; no whitelist/exclusion is required for this resolved detection;
 - refresh Defender definitions before retesting the affected or newer candidate;
 - the determination applies to the exact submitted binary and does not guarantee that every future unsigned PyInstaller build/hash will avoid a heuristic alert;
-- scan each new Windows candidate, including the corrected six-card Next Ready-first build, before wider distribution;
+- scan each new Windows candidate before wider distribution;
 - SignPath remains the preferred long-term signing path because Authenticode reputation and SmartScreen are separate from this resolved Defender classification.
 
 ## Public-repository privacy / governance
@@ -225,7 +227,7 @@ The prerequisite public release required by the project's adopted application fl
 
 Next sequence:
 
-1. refresh Defender definitions and rescan the current unsigned corrected six-card candidate once built; retain the result as candidate-specific evidence;
+1. refresh Defender definitions and rescan the current unsigned candidate once the updated Next Ready semantics are built; retain the result as candidate-specific evidence;
 2. submit/continue the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
 3. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
 4. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
