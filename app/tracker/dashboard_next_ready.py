@@ -1,9 +1,9 @@
 """Add the operational NEXT READY card to the Full dashboard header.
 
-The card answers one question: which gym is the next one that can actually be
-rerun? A future timestamp is shown only after that gym has satisfied the 5-rule;
-an expired cooldown with fewer than five qualifying trainer wins is therefore not
-presented as predictable readiness.
+The card shows the date/time when the earliest active Gym cooldown will end. It
+only displays READY when there are no active cooldowns in the selected character
+scope. Five-rule progress remains visible through READY/WAITING state elsewhere
+in the header and route rows; it does not suppress the cooldown-end prediction.
 
 Live review established that NEXT READY should lead the existing headline rather
 than replace any of its state summaries. The adopted order is therefore:
@@ -119,7 +119,7 @@ class DashboardNextReady:
         )
         self.title.pack(fill="x", padx=10, pady=(5, 0))
 
-        self.time_var = tk.StringVar(master=self.app, value="—")
+        self.time_var = tk.StringVar(master=self.app, value="READY")
         self.time_label = tk.Label(
             self.card,
             textvariable=self.time_var,
@@ -128,7 +128,7 @@ class DashboardNextReady:
         )
         self.time_label.pack(fill="x", padx=10, pady=(0, 0))
 
-        self.detail_var = tk.StringVar(master=self.app, value="Complete 5-rule first")
+        self.detail_var = tk.StringVar(master=self.app, value="No active cooldowns")
         self.detail_label = tk.Label(
             self.card,
             textvariable=self.detail_var,
