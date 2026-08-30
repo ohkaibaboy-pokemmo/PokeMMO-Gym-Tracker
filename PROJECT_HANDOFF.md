@@ -1,11 +1,11 @@
 # PokeMMO Gym Tracker — Project Handoff
 
-**Last updated:** 2026-08-29  
+**Last updated:** 2026-08-30  
 **Public branch:** `main`  
 **Released tag:** `v0.6.0`  
-**Status:** public unsigned v0.6 release published / external-test portability hotfix validated on an external 1920×1080 Windows setup / SignPath Foundation application next  
+**Status:** public unsigned v0.6 release published / external-test portability hotfix validated / Windows Defender heuristic detection under triage / SignPath Foundation application still planned  
 **Latest hotfix regression:** run `33258276374` — PASS  
-**Latest Windows candidate:** run `33258556273` — PASS / externally live-validated  
+**Latest Windows candidate:** run `33258556273` — PASS / externally live-validated / Defender detection reported on a local copy  
 **Public release workflow:** run `33213551249` — PASS  
 **Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
 
@@ -127,7 +127,7 @@ The public repository keeps the hardened release workflow on GitHub-hosted runne
 - Windows artifact uploaded before release publication, matching the intended SignPath origin-verification path;
 - normal `main` artifacts are retained for 7 days and do not create or replace a public GitHub Release.
 
-The prerequisite public release is now complete:
+The prerequisite public release is complete:
 
 - GitHub release **PokeMMO Gym Tracker v0.6.0** is public, not draft and not prerelease;
 - tag `v0.6.0` points to public source commit `79a29fb1e9a068a5f8c9deb561a3fcd44bc58279`;
@@ -136,6 +136,26 @@ The prerequisite public release is now complete:
 - release asset `PokeMMO-Gym-Tracker-windows-x64.zip` is approximately 11.4 MB with SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`.
 
 This v0.6 release is intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
+
+### Windows Defender heuristic detection — open 2026-08-30
+
+A Windows Defender alert was observed at 09:56 on 2026-08-30 for a locally extracted `PokeMMO Gym Tracker.exe` in a folder named `PokeMMO-Gym-Tracker-windows-x64-fixed`. Defender reported **`Trojan:Script/Wacatac.H!ml`**, alert level Severe. Treat this as an open distribution/security triage item: it is not yet proven malware and must not be dismissed as a false positive solely because the source is ours.
+
+The likely matching official fixed candidate is GitHub Actions run `33258556273`, commit `2817d637d7320b518cbfbf66fd893d9c42826b30`. Its provenance anchors are:
+
+- GitHub Actions artifact SHA-256 `d422485e7d8bc4728f834ea78c33ac9694c200178b2686c158c5beb20180a623`;
+- packaged inner ZIP SHA-256 `82e641a6746b06e7408eb56ec345ec90ec2d8338bf991ab38a3514f07fe9b4e8`;
+- `PokeMMO Gym Tracker.exe` SHA-256 `9f255ce832085500de983937ca964039cfa3e38ba4970d678eb582c01f275ea8`.
+
+The candidate EXE is currently unsigned, as expected before SignPath integration. Static inspection of the official candidate shows a PyInstaller onefile PE with no Authenticode security directory. The PyInstaller bootloader imports normal bootstrap/process APIs such as `CreateProcessW` and process-enumeration functions; the public Python source itself does not contain explicit shell/network/registry primitives found by a focused search. Microsoft documents `!ml` Wacatac names as broad machine-learning heuristic detections that can produce false positives, and PyInstaller has a history of Wacatac false-positive reports. These facts make a packaging/heuristic false positive plausible but are not proof.
+
+Triage sequence:
+
+1. compare the affected local EXE SHA-256 against `9f255ce832085500de983937ca964039cfa3e38ba4970d678eb582c01f275ea8`;
+2. if it differs, keep it quarantined and investigate its provenance before doing anything else;
+3. if it matches, keep Defender protection enabled and submit the exact official file to Microsoft Security Intelligence as a **Software developer** false-positive sample; record the Microsoft submission ID and final determination;
+4. do not instruct users to whitelist/allow the unsigned build while the detection remains unresolved;
+5. SignPath work may continue after provenance is confirmed, but final distribution must include a signed-candidate Defender/SmartScreen retest.
 
 ## Public-repository privacy / governance
 
@@ -152,17 +172,19 @@ Repository governance is in place:
 
 Selected direction: **SignPath Foundation**, assuming project acceptance. `CODE_SIGNING.md`, `SECURITY.md`, `CODEOWNERS`, pinned build dependencies and least-privilege workflows are present.
 
-The prerequisite public release required by the project's adopted application flow is complete, and the 2026-08-29 external-test portability hotfix is now externally validated. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
+The prerequisite public release required by the project's adopted application flow is complete, and the 2026-08-29 external-test portability hotfix is externally validated. The new Defender detection is now a separate distribution/security gate. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
 
 Next sequence:
 
-1. submit the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
-2. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
-3. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
-4. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
-5. build a signed Windows candidate through GitHub-hosted Actions;
-6. validate download -> extract -> launch and confirm Windows shows the expected publisher/signature;
-7. run final post-signing regression/sign-off and update the public release.
+1. verify the Defender-affected local EXE against the official fixed-candidate SHA-256;
+2. for a matching official file, submit it to Microsoft as a software-developer false positive and retain the submission ID/determination;
+3. submit/continue the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
+4. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
+5. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
+6. do **not** invent `.signpath/policies/...` project or policy slugs before SignPath supplies them;
+7. build a signed Windows candidate through GitHub-hosted Actions;
+8. validate download -> extract -> launch, Authenticode publisher/signature, Defender and SmartScreen behaviour;
+9. run final post-signing regression/sign-off and update the public release.
 
 ## Starting a new conversation
 
