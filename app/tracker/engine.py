@@ -161,11 +161,14 @@ class TrackerEngine:
         return context
 
     def _emit_payout(self, ts, player, opponent, amount, is_gym=None):
+        detected_is_gym, detected_leader = opponent_is_leader(opponent)
         if is_gym is None:
-            is_gym, leader = opponent_is_leader(opponent)
+            is_gym = detected_is_gym
+        if is_gym:
+            leader = detected_leader if detected_is_gym else canonical_leader(opponent)
+            label = canonical_leader(leader)
         else:
-            leader = canonical_leader(opponent) if is_gym else None
-        label = canonical_leader(leader) if is_gym else opponent
+            label = opponent
         self.emit(ts, f"PAYOUT: {label} — {player}; {format_detector_money(amount)}", "info")
 
     def record_linked_payout(self, ts, player, opponent, amount):
