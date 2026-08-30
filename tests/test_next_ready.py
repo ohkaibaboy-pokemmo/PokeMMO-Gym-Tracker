@@ -32,13 +32,12 @@ class NextReadyTests(unittest.TestCase):
             "manual_ready": manual_ready,
         }
 
-    def test_waiting_gym_is_not_claimed_as_predictable_ready(self):
+    def test_incomplete_five_rule_does_not_hide_active_cooldown_end(self):
         state = {
             "characters": {
                 "Tester": {
                     "gyms": {
-                        "Misty": self.record("2026-08-30T14:00:00", count=3),
-                        "Erika": self.record("2026-08-30T15:15:00", count=5),
+                        "Erika": self.record("2026-08-30T15:15:00", count=2),
                     }
                 }
             }
@@ -47,8 +46,9 @@ class NextReadyTests(unittest.TestCase):
         self.assertEqual(result["leader"], "Erika")
         self.assertFalse(result["ready_now"])
         self.assertEqual(format_next_ready_time(result), "30 Aug · 15:15")
+        self.assertEqual(format_next_ready_detail(result, "Tester"), "Erika")
 
-    def test_ready_now_beats_future_ready(self):
+    def test_earliest_active_cooldown_is_selected_even_if_another_gym_is_ready(self):
         state = {
             "characters": {
                 "Tester": {
@@ -60,18 +60,17 @@ class NextReadyTests(unittest.TestCase):
             }
         }
         result = next_ready_gym(state, "Tester", now=self.now)
-        self.assertEqual(result["leader"], "Misty")
-        self.assertTrue(result["ready_now"])
-        self.assertEqual(format_next_ready_time(result), "READY NOW")
-        self.assertEqual(format_next_ready_detail(result, "Tester"), "Misty")
+        self.assertEqual(result["leader"], "Erika")
+        self.assertFalse(result["ready_now"])
+        self.assertEqual(format_next_ready_time(result), "30 Aug · 15:15")
 
-    def test_earliest_future_ready_is_selected(self):
+    def test_earliest_future_cooldown_end_is_selected(self):
         state = {
             "characters": {
                 "Tester": {
                     "gyms": {
                         "Crasher Wake": self.record("2026-08-31T09:47:06", count=5),
-                        "Misty": self.record("2026-08-31T09:40:00", count=5),
+                        "Misty": self.record("2026-08-31T09:40:00", count=1),
                     }
                 }
             }
@@ -84,7 +83,7 @@ class NextReadyTests(unittest.TestCase):
         state = {
             "characters": {
                 "Alpha": {"gyms": {"Misty": self.record("2026-08-31T10:00:00", count=5)}},
-                "Beta": {"gyms": {"Brock": self.record("2026-08-31T09:30:00", count=5)}},
+                "Beta": {"gyms": {"Brock": self.record("2026-08-31T09:30:00", count=0)}},
             }
         }
         result = next_ready_gym(state, ALL_CHARACTERS, now=self.now)
@@ -92,18 +91,24 @@ class NextReadyTests(unittest.TestCase):
         self.assertEqual(result["character"], "Beta")
         self.assertEqual(format_next_ready_detail(result, ALL_CHARACTERS), "Brock · Beta")
 
-    def test_no_five_rule_complete_gym_has_no_predicted_time(self):
+    def test_no_active_cooldown_shows_ready_even_when_five_rule_is_incomplete(self):
         state = {
             "characters": {
-                "Tester": {"gyms": {"Misty": self.record("2026-08-30T14:00:00", count=4)}}
+                "Tester": {"gyms": {"Misty": self.record("2026-08-30T14:00:00", count=3)}}
             }
         }
         result = next_ready_gym(state, "Tester", now=self.now)
-        self.assertIsNone(result)
-        self.assertEqual(format_next_ready_time(result), "—")
-        self.assertEqual(format_next_ready_detail(result, "Tester"), "Complete 5-rule first")
+        self.assertTrue(result["ready_now"])
+        self.assertEqual(format_next_ready_time(result), "READY")
+        self.assertEqual(format_next_ready_detail(result, "Tester"), "No active cooldowns")
 
-    def test_legacy_manual_ready_matches_existing_row_semantics(self):
+    def test_no_gym_history_shows_ready(self):
+        state = {"characters": {"Tester": {"gyms": {}}}}
+        result = next_ready_gym(state, "Tester", now=self.now)
+        self.assertTrue(result["ready_now"])
+        self.assertEqual(format_next_ready_time(result), "READY")
+
+    def test_legacy_manual_ready_is_not_treated_as_active_cooldown(self):
         state = {
             "characters": {
                 "Tester": {
@@ -115,7 +120,7 @@ class NextReadyTests(unittest.TestCase):
         }
         result = next_ready_gym(state, "Tester", now=self.now)
         self.assertTrue(result["ready_now"])
-        self.assertEqual(format_next_ready_time(result), "READY NOW")
+        self.assertEqual(format_next_ready_time(result), "READY")
 
     def test_header_keeps_cooldown_and_puts_next_ready_first(self):
         order = next_ready_header_card_order()
