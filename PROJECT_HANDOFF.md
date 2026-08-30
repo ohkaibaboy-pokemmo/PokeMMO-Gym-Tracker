@@ -57,7 +57,7 @@ Preserve the accepted Full hierarchy:
 
 **Header/KPIs -> Controls -> Gym Route -> Detector**
 
-Headline cards: **Next Ready | Ready | Waiting | Run Earnings**. Run Details contains Route base / Actual run / Route gyms / Other payouts. Compact remains a rerun overlay rather than a miniature Full dashboard.
+Headline cards: **Next Ready | Ready | Waiting | Cooldown | Run Earnings**. Run Details contains Route base / Actual run / Route gyms / Other payouts. Compact remains a rerun overlay rather than a miniature Full dashboard.
 
 Five-rule counting model is opt-out:
 
@@ -82,9 +82,9 @@ Cooldown is 18 hours per character. Active timer = COOLDOWN; expired timer + inc
 - route, region and display filters do not alter this card, because it is a global operational readiness metric;
 - legacy `manual_ready` state is honored only for compatibility so the card cannot contradict an already-ready historical row.
 
-Live review of the first Next Ready Windows build confirmed that the new card itself was useful and readable. The user then adopted a stronger information hierarchy: **Next Ready | Ready | Waiting | Run Earnings | Run Details**. The raw **Cooldown** count is intentionally removed from the Full headline because individual cooldown state remains visible in route rows and Next Ready is the more useful aggregate timing signal. This is presentation-only; cooldown tracking/state is unchanged.
+Live review of the first Next Ready Windows build confirmed that the new card itself was useful and readable. The adopted information hierarchy is **Next Ready | Ready | Waiting | Cooldown | Run Earnings | Run Details**: the existing header remains intact, with Next Ready moved to the front. A brief five-card build that removed **Cooldown** was based on a misunderstanding and is superseded; do not treat removal of the Cooldown headline as an adopted design decision.
 
-The first four visible cards are equal-weight headline cards; Run Details remains the wider supporting card and still stacks to a second row at narrow widths.
+The first five visible cards are equal-weight headline cards; Run Details remains the wider supporting card and still stacks to a second row at narrow widths.
 
 ### External tester portability regression — resolved 2026-08-29
 
@@ -171,10 +171,10 @@ The prerequisite public release is complete:
 
 Latest development candidate:
 
-- `main` commit `25c9dfc8b644121488fc4b689a0421afc7aa85bd` adopted the live-reviewed headline order **Next Ready | Ready | Waiting | Run Earnings | Run Details** and removed the redundant Cooldown count from the Full headline only;
+- `main` commit `25c9dfc8b644121488fc4b689a0421afc7aa85bd` adopted a brief five-card headline build that removed the Cooldown count; the user immediately clarified that Cooldown should remain and that this build is superseded by the corrected six-card order with Next Ready first;
 - workflow run `33333768325` passed Regression tests and the Windows artifact job, including icon generation/verification and packaging;
 - artifact digest: `sha256:f0a1feb93ff74813d0347093440261b2c454ccfc177176ed5f6fae49cf852e16`;
-- this candidate is not yet externally UI/runtime validated, so keep the older live-validated candidate distinct in status reporting.
+- this superseded candidate is not the target for further external UI validation; validate the corrected six-card candidate once built on `main`.
 
 This v0.6 release and current development candidates are intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
 
@@ -203,7 +203,7 @@ Operational consequence:
 - keep Defender enabled; no whitelist/exclusion is required for this resolved detection;
 - refresh Defender definitions before retesting the affected or newer candidate;
 - the determination applies to the exact submitted binary and does not guarantee that every future unsigned PyInstaller build/hash will avoid a heuristic alert;
-- scan each new Windows candidate, including the current prioritized-header build, before wider distribution;
+- scan each new Windows candidate, including the corrected six-card Next Ready-first build, before wider distribution;
 - SignPath remains the preferred long-term signing path because Authenticode reputation and SmartScreen are separate from this resolved Defender classification.
 
 ## Public-repository privacy / governance
@@ -225,7 +225,7 @@ The prerequisite public release required by the project's adopted application fl
 
 Next sequence:
 
-1. refresh Defender definitions and rescan the current unsigned prioritized-header candidate; retain the result as candidate-specific evidence;
+1. refresh Defender definitions and rescan the current unsigned corrected six-card candidate once built; retain the result as candidate-specific evidence;
 2. submit/continue the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
 3. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
 4. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
