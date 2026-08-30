@@ -59,6 +59,7 @@ GYMS = [
 
 LEADER_ALIASES = {
     "ltsurge": "Lt. Surge",
+    "wake": "Crasher Wake",
     "crasherwake": "Crasher Wake",
     "tate&liza": "Tate & Liza",
     "tateandliza": "Tate & Liza",
