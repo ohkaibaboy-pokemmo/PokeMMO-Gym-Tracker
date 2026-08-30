@@ -118,10 +118,12 @@ class NextReadyTests(unittest.TestCase):
         self.assertEqual(format_next_ready_time(result), "READY NOW")
 
     def test_header_keeps_cooldown_and_puts_next_ready_first(self):
+        order = next_ready_header_card_order()
         self.assertEqual(
-            next_ready_header_card_order(),
+            order,
             ("next_ready", "ready", "waiting", "cooldown", "earnings", "details"),
         )
+        self.assertEqual(order[3], "cooldown")
 
     def test_header_uses_five_equal_headlines_before_run_details(self):
         weights = next_ready_summary_column_weights()
