@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from .constants import APP_VERSION, EXCLUDED_5_RULE_TRAINERS, VERIFIED_REMATCH_TRAINERS
+from .core import canonical_leader
 from .earnings import DEFAULT_EARNINGS_SETTINGS, ensure_earnings_state
 from .trainers import learn_repeat_rematches, merge_verified_catalogue, recalculate_5_rule_counts
 
@@ -67,14 +68,29 @@ def _migrate_state(state):
     # Compact is intentionally a per-session choice: every fresh launch opens full view.
     state["compact_mode"] = False
 
-    # Migrate the old Opelucid key used by early prototypes.
+    # Canonicalize historical gym keys and stored gym payout labels whenever a
+    # PokeMMO log uses a shorter/alternate leader name. This repairs old state as
+    # aliases are learned (for example "Wake" -> "Crasher Wake") rather than only
+    # fixing newly detected battles.
     for char in state.get("characters", {}).values():
         gyms = char.setdefault("gyms", {})
-        if "Drayden" in gyms and "Iris" not in gyms:
-            gyms["Iris"] = gyms.pop("Drayden")
+        for leader in list(gyms):
+            canonical = canonical_leader(leader)
+            if canonical == leader:
+                continue
+            alias_record = gyms.pop(leader)
+            canonical_record = gyms.get(canonical)
+            if canonical_record is None:
+                gyms[canonical] = alias_record
+            elif str(alias_record.get("defeated_at") or "") > str(canonical_record.get("defeated_at") or ""):
+                gyms[canonical] = alias_record
+
+        for event in char.get("earnings", {}).get("events", []):
+            if event.get("is_gym") and event.get("leader"):
+                event["leader"] = canonical_leader(event["leader"])
 
     for name, route in list(state.get("custom_routes", {}).items()):
-        state["custom_routes"][name] = ["Iris" if leader == "Drayden" else leader for leader in route]
+        state["custom_routes"][name] = [canonical_leader(leader) for leader in route]
 
     ensure_earnings_state(state)
     merge_verified_catalogue(state)
