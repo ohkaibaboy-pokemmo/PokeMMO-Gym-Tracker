@@ -4,6 +4,12 @@ The card answers one question: which gym is the next one that can actually be
 rerun? A future timestamp is shown only after that gym has satisfied the 5-rule;
 an expired cooldown with fewer than five qualifying trainer wins is therefore not
 presented as predictable readiness.
+
+Live review of the first Windows build established a clearer priority order for the
+headline: Next Ready -> Ready -> Waiting -> Run Earnings -> Run Details. The raw
+Cooldown count remains available in tracker state/route rows, but is intentionally
+removed from the Full headline because Next Ready is the more useful operational
+summary of cooldown readiness.
 """
 
 import tkinter as tk
@@ -17,15 +23,23 @@ from .next_ready import (
 )
 from .scaling import factor_for, scaled
 
-NEXT_READY_COLUMN = 3
-RUN_EARNINGS_COLUMN = 4
-DETAIL_COLUMN = 5
-HEADLINE_COLUMNS = (0, 1, 2, 3, 4)
+NEXT_READY_COLUMN = 0
+READY_COLUMN = 1
+WAITING_COLUMN = 2
+RUN_EARNINGS_COLUMN = 3
+DETAIL_COLUMN = 4
+HEADLINE_COLUMNS = (0, 1, 2, 3)
+HEADER_CARD_ORDER = ("next_ready", "ready", "waiting", "earnings", "details")
 
 
 def next_ready_summary_column_weights():
-    """Return five equal headline cards followed by the wider Run Details card."""
-    return (1, 1, 1, 1, 1, DETAIL_WEIGHT)
+    """Return four equal headline cards followed by the wider Run Details card."""
+    return (1, 1, 1, 1, DETAIL_WEIGHT)
+
+
+def next_ready_header_card_order():
+    """Return the adopted visible Full-header card order."""
+    return HEADER_CARD_ORDER
 
 
 class DashboardNextReady:
@@ -50,14 +64,36 @@ class DashboardNextReady:
         app._dashboard_next_ready = self
 
     def _configure_summary_columns(self):
-        for column in range(6):
+        for column in range(5):
             self.summary.columnconfigure(column, weight=0, minsize=0, uniform="")
         for column in HEADLINE_COLUMNS:
             self.summary.columnconfigure(column, weight=1, uniform="headline_kpi")
         self.summary.columnconfigure(DETAIL_COLUMN, weight=DETAIL_WEIGHT, uniform="")
 
     def _build(self):
-        # Insert the new headline before Run Earnings and shift Run Details right.
+        full = self.split.full
+
+        # NEXT READY is the first thing a rerunner needs to know. READY and WAITING
+        # follow it, then the current-run money. The old headline COOLDOWN count is
+        # deliberately hidden: the route rows still expose individual cooldowns and
+        # NEXT READY now provides the useful aggregate timing signal.
+        try:
+            full.stat_cards["cooldown"]["frame"].grid_forget()
+            full.stat_cards["ready"]["frame"].grid_configure(
+                row=0,
+                column=READY_COLUMN,
+                sticky="nsew",
+                padx=(0, 7),
+            )
+            full.stat_cards["waiting"]["frame"].grid_configure(
+                row=0,
+                column=WAITING_COLUMN,
+                sticky="nsew",
+                padx=(0, 7),
+            )
+        except (KeyError, tk.TclError):
+            pass
+
         self.split.run_card.grid_configure(column=RUN_EARNINGS_COLUMN, padx=(0, 7))
         self.split.details_card.grid_configure(column=DETAIL_COLUMN, padx=0)
 
@@ -93,8 +129,8 @@ class DashboardNextReady:
 
     def _install_layout_hooks(self):
         # DashboardHeaderResponsive owns narrow/wide composition. Teach its
-        # existing callbacks about the sixth column rather than creating a second
-        # resize system.
+        # existing callbacks about the five-column priority layout rather than
+        # creating a second resize system.
         def configure_split_columns():
             self._configure_summary_columns()
 
@@ -102,7 +138,7 @@ class DashboardNextReady:
 
         def configure_stacked_columns():
             self._configure_summary_columns()
-            # Run Details is stacked on row 1; all five headline columns remain
+            # Run Details is stacked on row 1; all four headline columns remain
             # equal on row 0.
             self.summary.columnconfigure(DETAIL_COLUMN, weight=0, minsize=0, uniform="")
 
@@ -146,7 +182,7 @@ class DashboardNextReady:
                 self.split.details_card.grid_configure(
                     row=1,
                     column=0,
-                    columnspan=6,
+                    columnspan=5,
                     sticky="nsew",
                     padx=0,
                     pady=(7, 0),
