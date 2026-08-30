@@ -117,18 +117,17 @@ class NextReadyTests(unittest.TestCase):
         self.assertTrue(result["ready_now"])
         self.assertEqual(format_next_ready_time(result), "READY NOW")
 
-    def test_header_priority_order_drops_redundant_cooldown_card(self):
+    def test_header_keeps_cooldown_and_puts_next_ready_first(self):
         self.assertEqual(
             next_ready_header_card_order(),
-            ("next_ready", "ready", "waiting", "earnings", "details"),
+            ("next_ready", "ready", "waiting", "cooldown", "earnings", "details"),
         )
-        self.assertNotIn("cooldown", next_ready_header_card_order())
 
-    def test_header_uses_four_equal_headlines_before_run_details(self):
+    def test_header_uses_five_equal_headlines_before_run_details(self):
         weights = next_ready_summary_column_weights()
-        self.assertEqual(weights[:4], (1, 1, 1, 1))
-        self.assertEqual(len(weights), 5)
-        self.assertGreater(weights[4], weights[3])
+        self.assertEqual(weights[:5], (1, 1, 1, 1, 1))
+        self.assertEqual(len(weights), 6)
+        self.assertGreater(weights[5], weights[4])
 
 
 if __name__ == "__main__":
