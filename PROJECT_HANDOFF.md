@@ -4,7 +4,7 @@
 **Public branch:** `main`  
 **Released tag:** `v0.6.0`  
 **Status:** public unsigned v0.6 release published / external-test portability hotfix validated / Microsoft Defender false positive confirmed for the submitted official candidate and detection removed / SignPath Foundation application still planned  
-**Latest main candidate:** run `33334221774` — PASS / corrected six-card Next Ready-first Windows build / external UI-runtime validation pending  
+**Latest main candidate:** run `33334576279` — PASS / Next Ready shows earliest active cooldown end / external UI-runtime validation pending  
 **Latest externally validated candidate:** run `33258556273` — PASS / external live validation / submitted EXE later cleared by Microsoft  
 **Public release workflow:** run `33213551249` — PASS  
 **Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
@@ -173,10 +173,10 @@ The prerequisite public release is complete:
 
 Latest development candidate:
 
-- `main` commit `a305885a1f8bf0a598fb11c0a7678ac2e61e8f83` restored the intended six-card headline order **Next Ready | Ready | Waiting | Cooldown | Run Earnings | Run Details** after the brief no-Cooldown misunderstanding;
-- workflow run `33334221774` passed Regression tests and the Windows artifact job, including icon generation/verification and packaging;
-- artifact digest: `sha256:27388a35e58057dcbc3c037cdbec26470bc2afbabf7f7990ac882f1bf0868b63`;
-- live review then refined the **semantics** of Next Ready: it should show the earliest active cooldown end regardless of five-rule progress and show READY only when no cooldown remains. The next candidate must validate that behavior while keeping the six-card layout unchanged.
+- `main` commit `88367be0aa7d28532a6ee2bacc338d115ebe48ca` implements the adopted Next Ready cooldown-end semantics while keeping the six-card header order unchanged;
+- workflow run `33334576279` passed Regression tests and the Windows artifact job, including icon generation/verification and packaging;
+- artifact digest: `sha256:e992b0ae65510a83c2cb7f70aba55ab6622423eef8cb982a1d3d38b2c072bb01`;
+- this candidate is not yet externally UI/runtime validated. Validate that a live active-cooldown state shows the earliest cooldown-end date/time and that the card changes to READY only once the selected scope has no active cooldowns.
 
 This v0.6 release and current development candidates are intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
 
@@ -227,7 +227,7 @@ The prerequisite public release required by the project's adopted application fl
 
 Next sequence:
 
-1. refresh Defender definitions and rescan the current unsigned candidate once the updated Next Ready semantics are built; retain the result as candidate-specific evidence;
+1. refresh Defender definitions and rescan the current unsigned candidate; retain the result as candidate-specific evidence;
 2. submit/continue the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
 3. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
 4. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
