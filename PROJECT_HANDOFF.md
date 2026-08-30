@@ -3,9 +3,9 @@
 **Last updated:** 2026-08-30  
 **Public branch:** `main`  
 **Released tag:** `v0.6.0`  
-**Status:** public unsigned v0.6 release published / external-test portability hotfix validated / exact official Windows candidate confirmed Defender-detected / Microsoft developer false-positive submission next / SignPath Foundation application still planned  
-**Latest hotfix regression:** run `33258276374` — PASS  
-**Latest Windows candidate:** run `33258556273` — PASS / externally live-validated / exact EXE hash confirmed as Defender-detected  
+**Status:** public unsigned v0.6 release published / external-test portability hotfix validated / Microsoft Defender false positive confirmed for the submitted official candidate and detection removed / SignPath Foundation application still planned  
+**Latest main candidate:** run `33317744136` — PASS / Next Ready Windows build / external UI-runtime validation pending  
+**Latest externally validated candidate:** run `33258556273` — PASS / external live validation / submitted EXE later cleared by Microsoft  
 **Public release workflow:** run `33213551249` — PASS  
 **Release asset:** `PokeMMO-Gym-Tracker-windows-x64.zip` — SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`
 
@@ -167,31 +167,42 @@ The prerequisite public release is complete:
 - the Windows job passed checkout, pinned build-tool installation, icon generation, onefile PyInstaller build, embedded-icon verification, ZIP packaging and artifact upload;
 - release asset `PokeMMO-Gym-Tracker-windows-x64.zip` is approximately 11.4 MB with SHA-256 `2ce87dd8ae9939336a9a866e2921c94d1bcb1ec8753670686043a538482e3915`.
 
-This v0.6 release is intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
+Latest development candidate:
 
-### Windows Defender heuristic detection — open 2026-08-30
+- `main` commit `e2ca82aab07bc04be009d192870a4c241f79e782` added the adopted Next Ready card;
+- workflow run `33317744136` passed Regression tests and the Windows artifact job, including icon generation/verification and packaging;
+- artifact digest: `sha256:1e1cc72b67ddf86e603fe2771fd47936d2897eb90c2887c638f804254bcb5b99`;
+- this candidate is not yet externally UI/runtime validated, so keep the older live-validated candidate distinct in status reporting.
 
-A Windows Defender alert was observed at 09:56 on 2026-08-30 for a locally extracted `PokeMMO Gym Tracker.exe` in a folder named `PokeMMO-Gym-Tracker-windows-x64-fixed`. Defender reported **`Trojan:Script/Wacatac.H!ml`**, alert level Severe.
+This v0.6 release and current development candidates are intentionally **unsigned** while the project applies for SignPath Foundation open-source code signing.
 
-The affected local EXE has now been SHA-256 checked and **exactly matches the official GitHub Actions fixed candidate** from run `33258556273`, commit `2817d637d7320b518cbfbf66fd893d9c42826b30`. This confirms that Defender is detecting the official reproducible project binary rather than an unknown or modified local copy. It still does not by itself prove either malware or a false positive.
+### Windows Defender heuristic detection — resolved 2026-08-30
 
-Confirmed provenance anchors:
+Windows Defender originally detected the exact official fixed candidate as **`Trojan:Script/Wacatac.H!ml`**. The affected EXE was SHA-256 checked and exactly matched the official GitHub Actions candidate from run `33258556273`, commit `2817d637d7320b518cbfbf66fd893d9c42826b30`.
+
+Confirmed provenance anchors for the submitted binary:
 
 - GitHub Actions artifact SHA-256 `d422485e7d8bc4728f834ea78c33ac9694c200178b2686c158c5beb20180a623`;
 - packaged inner ZIP SHA-256 `82e641a6746b06e7408eb56ec345ec90ec2d8338bf991ab38a3514f07fe9b4e8`;
-- `PokeMMO Gym Tracker.exe` SHA-256 `9f255ce832085500de983937ca964039cfa3e38ba4970d678eb582c01f275ea8` — **confirmed affected hash**.
+- `PokeMMO Gym Tracker.exe` SHA-256 `9f255ce832085500de983937ca964039cfa3e38ba4970d678eb582c01f275ea8`.
 
-The candidate EXE is unsigned, as expected before SignPath integration. Static inspection of the official candidate shows a PyInstaller onefile PE with no Authenticode security directory. The PyInstaller bootloader imports normal bootstrap/process APIs such as `CreateProcessW` and process-enumeration functions; the public Python source itself does not contain explicit shell/network/registry primitives found by a focused search. These facts make a packaging/heuristic false positive plausible but are not proof.
+The exact EXE was submitted to Microsoft Security Intelligence as an incorrect-detection report. Microsoft analyst comments subsequently stated that the submitted files did **not** meet Microsoft's criteria for malware or potentially unwanted applications and that the detection had been removed. This is the substantive analyst determination for the submitted official binary, so the prior malware/PUA uncertainty is closed as a false positive for that exact candidate.
 
-Microsoft's current software-developer guidance is to submit the detected file as a **Software developer** sample, wait for the final determination, and use the developer contact route supplied with the result if the determination is disputed. Microsoft also states that if an incorrectly detected file is determined clean, corrective action is taken to prevent that file from continuing to be detected.
+At the time the determination screenshot was captured, the portal header still displayed `In progress` even though the analyst comments already stated that the detection had been removed. Retain the submission reference privately until the portal status settles, but do not publish the screenshot, contact email or submission identifier in the public repository.
 
-Adopted triage sequence:
+Microsoft supplied these remediation steps for cached detections/definitions:
 
-1. keep Defender protection enabled; do not whitelist/allow the unsigned candidate while the detection remains unresolved;
-2. submit the exact official EXE to Microsoft Security Intelligence as **Software developer**, reporting that the file is believed to be incorrectly classified, with detection `Trojan:Script/Wacatac.H!ml` and SHA-256 `9f255ce832085500de983937ca964039cfa3e38ba4970d678eb582c01f275ea8`;
-3. retain the Microsoft Submission ID and final analyst determination;
-4. avoid broad distribution of this unsigned fixed candidate while the detection is unresolved;
-5. SignPath work may continue in parallel, but final distribution requires a signed-candidate Defender/SmartScreen retest as well as normal runtime validation.
+1. open an elevated Command Prompt and change directory to `C:\Program Files\Windows Defender`;
+2. run `MpCmdRun.exe -removedefinitions -dynamicsignatures`;
+3. run `MpCmdRun.exe -SignatureUpdate`.
+
+Operational consequence:
+
+- keep Defender enabled; no whitelist/exclusion is required for this resolved detection;
+- refresh Defender definitions before retesting the affected or newer candidate;
+- the determination applies to the exact submitted binary and does not guarantee that every future unsigned PyInstaller build/hash will avoid a heuristic alert;
+- scan each new Windows candidate, including the current Next Ready build, before wider distribution;
+- SignPath remains the preferred long-term signing path because Authenticode reputation and SmartScreen are separate from this resolved Defender classification.
 
 ## Public-repository privacy / governance
 
@@ -208,11 +219,11 @@ Repository governance is in place:
 
 Selected direction: **SignPath Foundation**, assuming project acceptance. `CODE_SIGNING.md`, `SECURITY.md`, `CODEOWNERS`, pinned build dependencies and least-privilege workflows are present.
 
-The prerequisite public release required by the project's adopted application flow is complete, and the 2026-08-29 external-test portability hotfix is externally validated. The Defender detection is now confirmed against the exact official candidate and is a separate distribution/security gate. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
+The prerequisite public release required by the project's adopted application flow is complete, the 2026-08-29 external-test portability hotfix is externally validated, and Microsoft has cleared the exact previously Defender-detected official candidate as not meeting malware/PUA criteria. The Defender false-positive investigation is therefore no longer a blocker for that submitted binary. Current SignPath Open Source requirements use a Trusted Build System and origin verification. The existing GitHub-hosted workflow already builds and stores the release artifact through GitHub Actions, which is the intended integration architecture.
 
 Next sequence:
 
-1. submit the exact official Defender-detected EXE to Microsoft Security Intelligence as a software-developer false-positive dispute and retain the Submission ID/determination;
+1. refresh Defender definitions and rescan the current unsigned Next Ready candidate; retain the result as candidate-specific evidence;
 2. submit/continue the SignPath Foundation application for `ohkaibaboy-pokemmo/PokeMMO-Gym-Tracker`, referencing the current public release/source state;
 3. wait for acceptance and the actual SignPath organization/project/signing-policy/artifact-configuration identifiers;
 4. install/authorize the SignPath GitHub App as instructed and add the trusted GitHub build-system/origin-verification integration;
