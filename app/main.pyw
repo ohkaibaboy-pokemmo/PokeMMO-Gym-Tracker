@@ -20,6 +20,7 @@ from tracker.dashboard_gym_list import install_dashboard_gym_list
 from tracker.dashboard_header_responsive import install_dashboard_header_responsive
 from tracker.dashboard_kpi_alignment import install_dashboard_kpi_alignment
 from tracker.dashboard_legacy_guard import install_legacy_dashboard_guard
+from tracker.dashboard_next_ready import install_dashboard_next_ready
 from tracker.dashboard_resize_smoothing import install_dashboard_resize_smoothing
 from tracker.dashboard_scaling import install_dashboard_scaling
 from tracker.dashboard_scrollbar_integration import install_dashboard_scrollbars
@@ -119,6 +120,9 @@ if __name__ == "__main__":
     # Keep the approved one-line KPI composition on wide windows, but move Run
     # Details onto a second full-width row when Full is narrowed so it never clips.
     install_dashboard_header_responsive(app)
+    # NEXT READY is operational rather than a raw timer: only gyms already at 5/5
+    # are predictable, and an expired eligible timer is surfaced as READY NOW.
+    install_dashboard_next_ready(app)
     # Keep route/view controls together and place Export with the adjacent file/log
     # utility cluster so the action row no longer reads Button/Checkbutton/Button.
     install_dashboard_action_grouping(app)
