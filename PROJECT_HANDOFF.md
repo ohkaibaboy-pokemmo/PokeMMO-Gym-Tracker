@@ -42,6 +42,7 @@ Important modules include:
 - `tracker/async_replay.py` — responsive batched replay.
 - `tracker/state.py` — persistence/migrations in LocalAppData.
 - `tracker/earnings.py` / `earnings_ui.py` — actual/projected earnings.
+- `tracker/next_ready.py` / `dashboard_next_ready.py` — operational next-rerunnable calculation and Full-header presentation.
 - `tracker/dashboard_full_refresh.py`, `dashboard_gym_list.py`, `dashboard_resize_smoothing.py` — Full dashboard.
 - `tracker/dashboard_detector.py` / `dashboard_detector_polish.py` — Detector presentation and replay lifecycle.
 - `tracker/layout_visibility_guard.py` — prevents scale passes from remapping presentation widgets that were deliberately hidden with `pack_forget` / `grid_forget`.
@@ -56,7 +57,7 @@ Preserve the accepted Full hierarchy:
 
 **Header/KPIs -> Controls -> Gym Route -> Detector**
 
-Headline cards: **Ready | Waiting | Cooldown | Run Earnings**. Run Details contains Route base / Actual run / Route gyms / Other payouts. Compact remains a rerun overlay rather than a miniature Full dashboard.
+Headline cards: **Ready | Waiting | Cooldown | Next Ready | Run Earnings**. Run Details contains Route base / Actual run / Route gyms / Other payouts. Compact remains a rerun overlay rather than a miniature Full dashboard.
 
 Five-rule counting model is opt-out:
 
@@ -67,6 +68,21 @@ Five-rule counting model is opt-out:
 - count caps at `5/5`.
 
 Cooldown is 18 hours per character. Active timer = COOLDOWN; expired timer + incomplete rule = WAITING; expired timer + `5/5` = READY. PokeMMO's rematch rejection is authoritative evidence and emits a WARN Detector event.
+
+### Next Ready card — adopted 2026-08-30
+
+`NEXT READY` answers which Gym is next to become actually rerunnable, not merely which cooldown expires first.
+
+- only Gym records already at `5/5` are eligible for a future ready prediction;
+- among eligible future records, show the earliest `ready_at` as local date/time plus leader;
+- if an eligible Gym's cooldown has already expired, show `READY NOW` rather than an old timestamp;
+- an expired cooldown with an incomplete 5-rule remains unpredictable and must not be presented as ready at its cooldown-end time;
+- when a specific character is selected, calculate only for that character;
+- `All characters` searches globally and identifies the character alongside the leader;
+- route, region and display filters do not alter this card, because it is a global operational readiness metric;
+- legacy `manual_ready` state is honored only for compatibility so the card cannot contradict an already-ready historical row.
+
+The Full header composition is now **Ready | Waiting | Cooldown | Next Ready | Run Earnings | Run Details**. The first five are equal-weight headline cards; Run Details remains the wider supporting card and still stacks to a second row at narrow widths.
 
 ### External tester portability regression — resolved 2026-08-29
 
@@ -80,20 +96,21 @@ The hotfix was merged to `main` at commit `6a5f9e73a7c5801a8968ce1652b9f4a9acdec
 
 **External validation PASS:** the same external tester, on a reported 1920×1080 Windows setup, ran the fresh fixed candidate at UI Scale `1.0×`. Live US-format tracking was visibly working across consecutive Gym battles: Brycen was detected, defeated and paid `$14,577`; Iris was then detected, defeated and paid `$14,742`; the dashboard showed two active cooldowns and Brycen correctly advanced to `1/5` while Iris began at `0/5`. The header no longer duplicated the live-log status, the retired earnings card did not reappear, and Run Details remained readable at the default scale. This closes the portability hotfix; do not change the responsive-header breakpoint based on the original corrupted screenshot unless new evidence appears.
 
-### External tester Pastoria / Wake alias regression — resolved 2026-08-30
+### External tester Pastoria / Wake string-mod regression — resolved 2026-08-30
 
-A second external test exposed a leader-name mismatch at Pastoria. The vanilla US-format log emitted `Leader Wake` for both the challenge and victory, and the Detector visibly reported a Gym win and `$13,572` payout, but the route table still showed **Pastoria — Crasher Wake** as UNKNOWN.
+A second external test exposed a leader-name mismatch at Pastoria while the tester had a third-party strings mod enabled. Their US-format log emitted `Leader Wake` for both the challenge and victory, and the Detector visibly reported a Gym win and `$13,572` payout, but the route table still showed **Pastoria — Crasher Wake** as UNKNOWN.
 
-Root cause: the canonical Gym table and built-in routes use `Crasher Wake`, while the observed PokeMMO log uses the shorter `Wake`. `LEADER_ALIASES` recognized `crasherwake` but did not recognize `wake`, so the engine stored the cooldown under a separate `Wake` state key. The same raw opponent phrase also leaked into the Detector payout label.
+Root cause: the canonical Gym table and built-in routes use `Crasher Wake`, while this observed string-mod output uses the shorter `Wake`. `LEADER_ALIASES` recognized `crasherwake` but did not recognize `wake`, so the engine stored the cooldown under a separate `Wake` state key. The same raw opponent phrase also leaked into the Detector payout label.
 
 Adopted repair:
 
-- map `Wake` -> `Crasher Wake` during leader canonicalization;
+- keep vanilla PokeMMO output as the canonical parser contract while supporting `Wake` as an empirically observed string-mod alias for `Crasher Wake`;
+- support both `Leader Wake` and `Leader Crasher Wake` through the same canonical Pastoria record;
 - canonicalize historical Gym keys, Gym earnings labels and custom-route entries during state migration so already-affected users repair automatically on their next launch;
-- canonicalize Gym payout presentation through `opponent_is_leader()` so the Detector displays the canonical leader name;
-- keep regression coverage based on a sanitized reproduction of the observed `15:45:06` challenge -> `15:47:06` victory -> `15:47:07` `$13,572` payout sequence; do not commit the tester's raw chat log.
+- canonicalize Gym payout presentation through `opponent_is_leader()` so either supported leader-name form produces the same canonical Crasher Wake payout presentation;
+- keep regression coverage for both name forms and for the sanitized observed `15:45:06` challenge -> `15:47:06` victory -> `15:47:07` `$13,572` payout sequence; do not commit the tester's raw chat log.
 
-Regression workflow run `33315930141` passed all tests after the repair. Treat `Wake` as an empirically verified vanilla PokeMMO alias for `Crasher Wake` going forward.
+Regression workflow run `33315930141` passed all tests after the original repair, and dual-name coverage was added afterward. Treat `Wake` as empirically verified **string-mod** evidence, not as proof of vanilla PokeMMO naming.
 
 ### Bugsy / PI Carlos regression — resolved
 
