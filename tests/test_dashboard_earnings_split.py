@@ -11,12 +11,15 @@ if str(APP) not in sys.path:
 from tracker.dashboard_earnings_split import (
     DETAILS_TITLE_BASELINE_LIFT_BASE,
     DETAILS_TITLE_COLOURS,
+    DETAIL_METRIC_COLUMN_GAP_BASE,
+    DETAIL_METRIC_COLUMN_GAP_MAX,
     DETAIL_METRIC_GROUP_HEIGHT_BASE,
     DETAIL_METRIC_LABELS,
     DETAIL_METRIC_TOP_PADDING_BASE,
     DETAIL_METRIC_VALUE_Y_BASE,
     DETAIL_WEIGHT,
     earnings_summary_column_weights,
+    run_details_metric_column_gap,
     run_details_metric_geometry,
     run_details_metric_labels,
     run_details_metric_top_padding,
@@ -34,6 +37,12 @@ class DashboardEarningsSplitTests(unittest.TestCase):
         weights = earnings_summary_column_weights()
         self.assertEqual(weights, (1, 1, 1, 1, DETAIL_WEIGHT))
         self.assertGreater(weights[4], weights[3])
+
+    def test_run_details_reserves_extra_width_after_fifth_headline_kpi(self):
+        # NEXT READY adds a fifth headline card in the composed header. The
+        # supporting Run Details card needs enough relative width for labels such
+        # as "Route gyms" and values such as "31 payouts" on Windows.
+        self.assertGreaterEqual(DETAIL_WEIGHT, 4)
 
     def test_run_details_heading_has_its_own_theme_aware_accent(self):
         self.assertEqual(run_details_title_colour("Dark"), DETAILS_TITLE_COLOURS["Dark"])
@@ -69,6 +78,12 @@ class DashboardEarningsSplitTests(unittest.TestCase):
         self.assertGreater(two_x_y, one_x_y)
         self.assertGreater(two_x_height, one_x_height)
         self.assertLessEqual(two_x_y, one_x_y * 2)
+
+    def test_metric_column_gap_reclaims_horizontal_room_and_stays_capped(self):
+        self.assertEqual(run_details_metric_column_gap(1.0), DETAIL_METRIC_COLUMN_GAP_BASE)
+        self.assertLess(DETAIL_METRIC_COLUMN_GAP_BASE, 12)
+        self.assertLessEqual(run_details_metric_column_gap(2.0), DETAIL_METRIC_COLUMN_GAP_MAX)
+        self.assertLessEqual(DETAIL_METRIC_COLUMN_GAP_MAX, 10)
 
     def test_run_details_title_gets_small_scale_aware_baseline_lift(self):
         self.assertEqual(run_details_title_baseline_lift(1.0), DETAILS_TITLE_BASELINE_LIFT_BASE)

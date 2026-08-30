@@ -18,7 +18,11 @@ from .scaling import factor_for, scaled
 
 HEADLINE_COLUMNS = (0, 1, 2, 3)
 DETAIL_COLUMN = 4
-DETAIL_WEIGHT = 3
+# The fifth headline KPI added by NEXT READY reduced the physical width available
+# to this supporting card. Live Windows review then clipped both "Route gyms" and
+# its All-characters value (for example "31 payouts"). Keep Run Details visibly
+# wider than a headline card so all four supporting metrics have usable width.
+DETAIL_WEIGHT = 4
 DETAILS_TITLE_COLOURS = {
     "Dark": "#8FAEBF",
     "PokeMMO": "#91ADB6",
@@ -30,14 +34,20 @@ DETAIL_METRIC_LABELS = (
     "Route gyms",
     "Other payouts",
 )
-# Build 38 proved the outer breathing room was not the real clipping source: on
-# Windows the tiny caption widget can still occupy almost the full old 13px offset,
-# so the value widget may paint over the caption's lowest antialiased pixels. Keep
-# the 2px top inset but open the caption/value separation by 3px and grow the group
-# by 4px so the values still retain comfortable bottom breathing room.
+# Build 38 proved the outer breathing room was not the real vertical clipping
+# source: on Windows the tiny caption widget can still occupy almost the full old
+# 13px offset, so the value widget may paint over the caption's lowest antialiased
+# pixels. Keep the 2px top inset but open the caption/value separation by 3px and
+# grow the group by 4px so values retain comfortable bottom breathing room.
 DETAIL_METRIC_VALUE_Y_BASE = 16
 DETAIL_METRIC_TOP_PADDING_BASE = 2
 DETAIL_METRIC_GROUP_HEIGHT_BASE = 40
+# With five headline KPIs, the old 12px inter-metric gutters also consumed too
+# much of the Run Details card. Eight pixels keeps the four groups visually
+# separated while giving long captions/values more room. Cap scaled gutters so
+# UI scaling does not reintroduce horizontal clipping.
+DETAIL_METRIC_COLUMN_GAP_BASE = 8
+DETAIL_METRIC_COLUMN_GAP_MAX = 10
 # Matching grid rows still left RUN DETAILS a couple of pixels below neighbouring
 # KPI titles under Windows font metrics, so lift it slightly within the upper row.
 DETAILS_TITLE_BASELINE_LIFT_BASE = 2
@@ -66,6 +76,19 @@ def run_details_metric_top_padding(factor=1.0):
         factor = 1.0
     factor = max(0.85, factor)
     return max(2, int(round(DETAIL_METRIC_TOP_PADDING_BASE * factor)))
+
+
+def run_details_metric_column_gap(factor=1.0):
+    """Return a compact scale-aware horizontal gutter for Run Details metrics."""
+    try:
+        factor = float(factor)
+    except (TypeError, ValueError):
+        factor = 1.0
+    factor = max(0.85, factor)
+    return min(
+        DETAIL_METRIC_COLUMN_GAP_MAX,
+        max(6, int(round(DETAIL_METRIC_COLUMN_GAP_BASE * factor))),
+    )
 
 
 def run_details_metric_geometry(factor=1.0):
@@ -199,10 +222,16 @@ class DashboardEarningsSplit:
             (DETAIL_METRIC_LABELS[3], "other_var", True),
         )
         top_padding = run_details_metric_top_padding(1.0)
+        column_gap = run_details_metric_column_gap(1.0)
         value_y, group_height = run_details_metric_geometry(1.0)
         for column, (caption_text, attr, is_money) in enumerate(metric_specs):
             group = tk.Frame(self.details_host, bd=0, height=group_height)
-            group.grid(row=0, column=column, sticky="nsew", padx=(0, 12) if column < 3 else 0)
+            group.grid(
+                row=0,
+                column=column,
+                sticky="nsew",
+                padx=(0, column_gap) if column < 3 else 0,
+            )
             group.grid_propagate(False)
             # Keep the caption itself in the same position; only the value starts
             # lower so Windows cannot overpaint the caption's descenders/edge pixels.
@@ -246,17 +275,19 @@ class DashboardEarningsSplit:
     def apply_scale(self):
         factor = factor_for(self.app)
         top_padding = run_details_metric_top_padding(factor)
+        column_gap = run_details_metric_column_gap(factor)
         value_y, group_height = run_details_metric_geometry(factor)
         title_lift = run_details_title_baseline_lift(factor)
         try:
             self.details_title.configure(font=("Segoe UI Semibold", scaled(7, factor, 6)))
             self.details_title.grid_configure(pady=(0, title_lift))
-            for group, caption, value, _is_money in self.metric_widgets:
-                # Preserve the accepted fonts and caption position; scale only the
-                # safe line separation and available lower breathing room.
+            for index, (group, caption, value, _is_money) in enumerate(self.metric_widgets):
+                # Preserve the accepted fonts and caption position while keeping
+                # enough horizontal room for longer labels/All-characters values.
                 caption.configure(font=("Segoe UI", scaled(6, factor, 6)))
                 value.configure(font=("Segoe UI Semibold", scaled(8, factor, 7)))
                 group.configure(height=group_height)
+                group.grid_configure(padx=(0, column_gap) if index < 3 else 0)
                 caption.place_configure(x=0, y=top_padding)
                 value.place_configure(x=0, y=value_y)
         except tk.TclError:
